@@ -1,0 +1,7 @@
+# Ignore CMake files
+CMakeFiles/
+CMakeCache.txt
+
+# Ignore generated makefiles
+Makefile
+cmake_install.cmake

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$(dirname $0)" == "" ]; then
+	. ../config
+else
+	. $(dirname $0)/../config
+fi
+
+while (true); do
+	mkdir $DIR_MOUNT/tr_ABCDEF
+	rmdir $DIR_MOUNT/tr_ABCDEF
+done

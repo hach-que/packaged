@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# Find the location of this script.
+_S="${BASH_SOURCE[0]}"
+while [ -h "$_S" ] ; do _S="$(readlink "$_S")"; done
+CONFIG_ROOT="$( cd -P "$( dirname "$_S" )" && pwd )"
+
+# The root of the AppFS source code.
+DIR_ROOT=$(readlink -f $CONFIG_ROOT/../)
+
+# Calculated test folders.
+DIR_WORKING="$DIR_ROOT/tests/working"
+DIR_MOUNT="$DIR_WORKING/mount"
+FILE_AFS="$DIR_WORKING/test.afs"
+
+# Ensure the working directory exists.
+if [ ! -d "$DIR_WORKING" ]; then
+	mkdir -pv "$DIR_WORKING"
+fi
+
+# Ensure the test suite will run correctly.
+if [ $UID -ne 0 ]; then
+    echo "Please run the test suite as root (due to permission test requirements)."
+    exit 1
+fi
+
+if [ "$IGNORE_MOUNTING" != "true" ]; then
+    # Check build root is set.
+    if [[ $BUILD_ROOT && ${BUILD_ROOT-x} ]]; then
+        # All good.
+        true
+    else
+        echo "Please invoke this script with BUILD_ROOT set, like so:"
+        echo "  > BUILD_ROOT=path/of/build $0"
+        exit 1
+    fi
+
+	# Define cleanup.
+	cleanup()
+	{
+		# Forcibly unmount the existing mount directory.
+		fusermount -u "$DIR_MOUNT" >/dev/null 2>/dev/null;
+	}
+	trap cleanup SIGINT
+	cleanup
+	
+	# Ensure the mount directory exists.
+    if [ ! -d "$DIR_MOUNT" ]; then
+    	mkdir -pv "$DIR_MOUNT"
+    else
+        # Ensure it is empty.
+        rm -R "$DIR_MOUNT/"
+        mkdir -pv "$DIR_MOUNT"
+    fi
+	
+	# Remove and recreate the test package.
+	rm "$FILE_AFS"
+	"$BUILD_ROOT/packaged-fs/packaged-fscreate" "$FILE_AFS"
+	
+	# Wait for the user to signal that AppMount has started.
+	"$BUILD_ROOT/packaged-fs/packaged-fsmount" -o "$FILE_AFS" "$DIR_MOUNT" &
+	sleep 1
+fi

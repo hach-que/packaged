@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "$(dirname $0)" == "" ]; then
+	. ../config
+else
+	. $(dirname $0)/../config
+fi
+
+while (true); do
+	touch $DIR_MOUNT/tr_GHIJKL
+	rm $DIR_MOUNT/tr_GHIJKL
+done

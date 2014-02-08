@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#IGNORE_MOUNTING=true
+if [ "$(dirname $0)" == "" ]; then
+	. ./config
+else
+	. $(dirname $0)/config
+fi
+
+if [ ! -d $DIR_ROOT/tests/suite ]; then
+	echo "The POSIX filesystem test suite must be located in $DIR_ROOT/tests/suite for this script to work."
+	exit 1
+fi
+if [ ! -f $DIR_ROOT/tests/suite/fstest ]; then
+    echo "The POSIX filesystem test suite must be built with make first (under $DIR_ROOT/tests/suite)."
+	exit 1
+fi
+
+pushd $DIR_MOUNT
+if [ "$1" != "" ]; then
+	if [ "$2" != "" ]; then
+		prove -v $DIR_ROOT/tests/suite/tests/$1/$2.t
+	else
+		prove -r $DIR_ROOT/tests/suite/tests/$1
+	fi
+else
+	prove -r -s $DIR_ROOT/tests/suite/tests/
+fi
+popd
+
+if [ "$IGNORE_MOUNTING" != "true" ]; then
+	# Forcibly unmount the existing mount directory.
+	fusermount -u "$DIR_MOUNT" >/dev/null 2>/dev/null;
+fi

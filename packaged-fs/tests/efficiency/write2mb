@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if [ "$(dirname $0)" == "" ]; then
+	. ../config
+else
+	. $(dirname $0)/../config
+fi
+
+STORE=$(dirname $0)/write2mb_store
+STORE_TEMP=$(dirname $0)/write2mb_temp
+LETTERS="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+STORE_TICKS=$[2 * 1024 * 1024 / ${#LETTERS}]
+
+# Create the write buffer.
+echo "Creating 2MB write buffer..."
+if [ ! -e $STORE ]; then
+	echo -n > $STORE
+	for ((i=0;i<$STORE_TICKS;i=$[$i+1])); do
+		echo $LETTERS >> $STORE
+	done
+fi
+
+# Time how long it takes to echo the write buffer to a file.
+echo -n "Writing 2MB..."
+time cp $STORE $DIR_MOUNT/tr_2mbtest
+echo -n "Reading 2MB..."
+time cp $DIR_MOUNT/tr_2mbtest $STORE_TEMP
+echo "Verifing 2MB..."
+if diff $STORE $STORE_TEMP >/dev/null; then
+	echo " success."
+else
+	echo " error - not same."
+fi

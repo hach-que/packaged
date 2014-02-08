@@ -1,0 +1,58 @@
+#!/bin/bash
+
+if [ "$SIZE_STEP" == "" ]; then
+	echo "Call another one of the sizerXXX scripts instead."
+	exit 1
+fi
+
+if [ "$(dirname $0)" == "" ]; then
+	. ../config
+else
+	. $(dirname $0)/../config
+fi
+
+LETTERS="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+LINDEX=0
+
+SIZE_TOTAL=$[2 * 1024 * 1024]
+SIZE_CURRENT=0
+SIZE_MODE="up"
+
+WRITE_BUFFER=""
+
+echo -n "File size: -"
+LINE="File size: -"
+
+while (true); do
+	# Adjust the write buffer.
+	WRITE_BUFFER=""
+	for ((i=${#LETTERS};i<=$SIZE_CURRENT;i=$[$i+${#LETTERS}])); do
+		WRITE_BUFFER="$WRITE_BUFFER$LETTERS"
+	done
+	B=$[$SIZE_CURRENT % ${#LETTERS}]
+	WRITE_BUFFER="$WRITE_BUFFER${LETTERS:0:$B}"
+
+	# Adjust the settings.
+	if [ "$SIZE_MODE" == "up" ]; then
+		SIZE_CURRENT=$[$SIZE_CURRENT+$SIZE_STEP]
+		if [ $SIZE_CURRENT -eq $SIZE_TOTAL ]; then
+			SIZE_MODE="down"
+		fi
+	else
+		SIZE_CURRENT=$[$SIZE_CURRENT-$SIZE_STEP]
+		if [ $SIZE_CURRENT -eq 0 ]; then
+			SIZE_MODE="up"
+		fi
+	fi
+
+	tput cub ${#LINE}
+	LINE="File size: ${#WRITE_BUFFER}"
+	echo -n "$LINE"
+
+	echo -n "$WRITE_BUFFER" > $DIR_MOUNT/tr_sizer
+	A="$(<$DIR_MOUNT/tr_sizer)"
+	if [ "$A" != "$WRITE_BUFFER" ]; then
+		echo " - error"
+		echo -n "$LINE"
+	fi
+done

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ "$(dirname $0)" == "" ]; then
+	. ../config
+else
+	. $(dirname $0)/../config
+fi
+
+L="MNOPQRSTUVWXYZ"
+
+while (true); do
+	echo -n "$L" > $DIR_MOUNT/tr_abcdef
+	A="$(<$DIR_MOUNT/tr_abcdef)"
+	if [ "$A" != "$L" ]; then
+		echo "Data does not match (got $A, expected $L).";
+	fi
+	rm $DIR_MOUNT/tr_abcdef
+done
